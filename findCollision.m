@@ -22,14 +22,13 @@ function [t, collisionState] = ...
         if t > eps
             slopeW = (y2 - y1)/(x2 - x1);
             angleW = atand(slopeW);
-            if (angleW < 45)
+            if (angleW <= 45)
                 vy = -cor*vy;
-            elseif (angleW > 45)
+            end
+            if (angleW >= 45)
                 vx = -cor*vx;
             end
-            collisionState = [xCol, yCol, vx, vy];
-        elseif abs(t) < eps
-            
+            collisionState = [xCol, yCol, vx, vy];            
         end
     end
 end
@@ -54,7 +53,7 @@ function [xCol, yCol] = colPoint(wall,BS)
     rMat = [Y1 - slopeW * X1; BS(2) - slopeV * BS(1)];
 
     sol = cMat\rMat;
-%     sol(abs(sol) < .0001) = 0;
+
     xCol = sol(2);
     yCol = sol(1);
     

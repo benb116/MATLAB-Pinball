@@ -1,4 +1,5 @@
 close all
+warning('off','MATLAB:singularMatrix')
 
 % ss = get(0,'ScreenSize');
 % fig = figure('Position',ss.*.5);
@@ -7,7 +8,7 @@ figure
 
 dt = 0.05;
 g = -9.8/3;
-currentBS = [4 5 4 4];
+currentBS = [6 2 4 4];
 
 Walls = [0 0 0 10 .8; ... % Left
         0 10 10 10 .8; ... % Top
