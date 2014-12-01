@@ -7,14 +7,17 @@ warning('off','MATLAB:singularMatrix')
 figure
 
 dt = 0.05;
-g = -9.8/3;
-currentBS = [6 2 4 4];
+g = -9.8/4;
+currentBS = [2 7 -5 4];
 
-Walls = [0 0 0 10 .8; ... % Left
+Walls = [...
+        0 3 0 10 .8; ... % Left
         0 10 10 10 .8; ... % Top
-        10 0 10 10 .8; ... % Right
-        0 0 7.5 0 .8; ...
-        0 0 5 5 1]; % Bottom
+        10 3 10 10 .8; ... % Right
+        0 3 3 0 .5; ...
+        10 3 7 0 1.5; ... 
+       
+        3 0 7 0 .8]; % Diag
 
     
 for i = 1:length(Walls(:,1))
@@ -37,9 +40,7 @@ set(h_ax_line, 'color', 'none')
 axis([0 10 -1 10])
 
 while currentBS(2) > -0.0001
-
    currentBS(4) = currentBS(4) + g * dt;
-   
    currentBS = updateBallState(currentBS, dt, Walls);
    scatter(currentBS(1),currentBS(2))
    set(h_ax_line, 'color', 'none')

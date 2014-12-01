@@ -19,16 +19,20 @@ function [t, collisionState] = ...
 
     if ((yCol >= min(y1,y2)) && (yCol <= max(y1,y2)) && (xCol >= min(x1,x2)) && (xCol <= max(x1,x2)))        
         t = (xCol - x) / vx;
-        if t > eps
+        if isnan(t)
+            t = (yCol - y) / vy;
+        end
+        if t >= 0
             slopeW = (y2 - y1)/(x2 - x1);
             angleW = atand(slopeW);
-            if (angleW <= 45)
-                vy = -cor*vy;
+            angleV = atand(vy/vx);
+            
+            if (sign(vx) == -1)
+                angleV = angleV + 180;
             end
-            if (angleW >= 45)
-                vx = -cor*vx;
-            end
-            collisionState = [xCol, yCol, vx, vy];            
+            
+            [nvx, nvy] = bounceVel(angleW, angleV, vx, vy, cor);
+            collisionState = [xCol, yCol, nvx, nvy];            
         end
     end
 end
@@ -59,4 +63,24 @@ function [xCol, yCol] = colPoint(wall,BS)
     
     xCol = round(1000*xCol)/1000;
     yCol = round(1000*yCol)/1000;
+end
+
+function [xVel, yVel] = bounceVel(angleW, angleV, vx, vy, cor)
+    angleOut = 2 * angleW - angleV;
+
+%     if angleOut == 180
+%         angleOut = angleOut * sign(vx);
+%         if angleOut == -180
+%             angleOut = 0;
+%         end
+%     elseif abs(angleOut) == 90
+%         angleOut = angleOut * sign(vy);
+%     elseif (angleOut <= 0) || (angleV > angleW)
+%         angleOut = angleOut + 180;
+%     end
+    hypot = sqrt(vx^2 + vy^2);
+    xVel = cosd(angleOut)*hypot * cor;
+    yVel = sind(angleOut)*hypot * cor;
+    
+
 end
