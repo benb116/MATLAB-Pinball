@@ -15,19 +15,14 @@ for wall = walls'
     ctr = ctr+1;
     % Determine when the ball will hit the wall - if at all.
     [t(ctr), collision_state{ctr}] = ...
-        findCollision(ballState, wall);
+        findCollision(ballState, wall,1);
 end
-t(t<0) = Inf;
 % Find the minimum collision time via sorting.
 [t,ind] = sort(t);
 collision_state = collision_state(ind);
 % If the minimum collision time is less than the simulation time
 % (+eps to account for numerical inaccuracies), account for the
 % collision.
-while t(1) < eps
-    t(1) = [];
-    collision_state = collision_state(2:end);
-end
 if (t(1) <= dt+eps)
     newBallState = collision_state{1};
     ttc = t(1);
@@ -55,6 +50,6 @@ if (t(1) <= dt+eps)
 end
 % Resimulate the trajectory of the ball if there is time
 % left after the collision.
-if (dt - ttc > eps)
+if ttc < dt
     newBallState = updateBallState(newBallState, dt-ttc,walls);
 end
