@@ -8,16 +8,18 @@ figure
 
 dt = 0.05;
 g = -9.8/4;
-currentBS = [2 7 -5 4];
+currentBS = [8 4 3 4];
 
+% [5 4 -2 0];
 Walls = [...
-        0 3 0 10 .8; ... % Left
-        0 10 10 10 .8; ... % Top
-        10 3 10 10 .8; ... % Right
-        0 3 3 0 .5; ...
-        10 3 7 0 1.5; ... 
-       
-        3 0 7 0 .8]; % Diag
+        0 5 0 10 1; ... % Left
+        0 10 10 10 1; ... % Top
+        10 5 10 10 1; ... % Right
+        0 5 3 0 1; ...
+        10 5 7 0 1; ... 
+        0 7 3 10 1; ...
+        7 10 10 7 1; ...
+        3 0 7 0 1]; % Diag
 
     
 for i = 1:length(Walls(:,1))
@@ -30,6 +32,7 @@ end
 hold off
 h_ax = gca;
 axis([0 10 -1 10])
+axis square
 axis off
 
 h_ax_line = axes('position', get(h_ax, 'position'));
@@ -45,6 +48,7 @@ while currentBS(2) > -0.0001
    scatter(currentBS(1),currentBS(2))
    set(h_ax_line, 'color', 'none')
    axis([0 10 -1 10])
+   axis square
    axis off
    drawnow
 end

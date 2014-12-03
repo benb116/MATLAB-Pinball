@@ -24,12 +24,16 @@ collision_state = collision_state(ind);
 % If the minimum collision time is less than the simulation time
 % (+eps to account for numerical inaccuracies), account for the
 % collision.
-while t(1) < eps
+% disp(t(1))
+while t(1) < .001
     t(1) = [];
     collision_state = collision_state(2:end);
 end
 if (t(1) <= dt+eps)
     newBallState = collision_state{1};
+%     if t(1) < .01
+%         disp(t(1))
+%     end
     ttc = t(1);
     % Accounts for corner cases in which the time to
     % collision is the same for the first two collisions
