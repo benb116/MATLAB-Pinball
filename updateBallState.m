@@ -25,25 +25,18 @@ collision_state = collision_state(ind);
 % (+eps to account for numerical inaccuracies), account for the
 % collision.
 % disp(t(1))
-while t(1) < .001
+while t(1) < .0005
     t(1) = [];
     collision_state = collision_state(2:end);
 end
 if (t(1) <= dt+eps)
+    colWall = walls(ind(1),:);
     newBallState = collision_state{1};
 %     if t(1) < .01
 %         disp(t(1))
 %     end
     ttc = t(1);
-    % Accounts for corner cases in which the time to
-    % collision is the same for the first two collisions
-    % that are to occur. This situation is related to eps so
-    % that the numerical accuracy of the computation (very
-    % very small results) do not lead to erroneous output.
-    % If a corner case is found, x and y velocity chosen
-    % from the two collision states such that both x and y
-    % velocity are opposite in sign from the initial input
-    % state.
+    % Accounts for corner cases
     if abs(t(1)-t(2)) < eps
         if sign(ballState(3)) ~= sign(collision_state{1}(3))
             newBallState(3) = collision_state{1}(3);

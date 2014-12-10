@@ -1,7 +1,8 @@
 function [t, collisionState] = ...
     findCollision(ballState, wall)
 
-    cor = wall(5);
+    cor1 = wall(5);
+    cor2 = wall(6);
     x = ballState(1);
     y = ballState(2);
     vx = ballState(3);
@@ -14,7 +15,7 @@ function [t, collisionState] = ...
     t = Inf;
     collisionState = [NaN NaN NaN NaN];
     % Get the position of the ball at collision
-    [xCol, yCol] = colPoint(wall,ballState);
+    [xCol, yCol] = colPoint();
     % If the coordinates fall in the range of the wall coordinates
     if ((yCol >= min(y1,y2)) && (yCol <= max(y1,y2))...
             && (xCol >= min(x1,x2)) && (xCol <= max(x1,x2)))        
@@ -32,46 +33,45 @@ function [t, collisionState] = ...
             % correct angle (respect to horizontal)
             angleV = angleV + 180*(sign(vx) == -1); % Flip it 180 if vx < 0
             % Determine the velocity components after collision
-            [nvx, nvy] = bounceVel(angleW, angleV, vx, vy, cor);
+            [nvx, nvy] = bounceVel();
             collisionState = [xCol, yCol, nvx, nvy];            
         end
     end
-end
-
-function [xCol, yCol] = colPoint(wall,BS)
     
-    X1 = wall(1);
-    Y1 = wall(2);
-    X2 = wall(3);
-    Y2 = wall(4);
-
-    slopeW = (Y2 - Y1)/(X2 - X1);
-    if abs(slopeW) == Inf % If wall is vertical, make it really steep
-        slopeW = 10000000;
+    function [xCol, yCol] = colPoint()
+        slopeW = (y2 - y1)/(x2 - x1); % Slope wall
+        if abs(slopeW) == Inf % If wall is vertical, make it really steep
+            slopeW = 10000000;
+        end
+        slopeV = ballState(4)/ballState(3);
+        if abs(slopeV) == Inf % If velocity is vertical, make it really steep
+            slopeV = 10000000;
+        end
+        % Take the two slopes and use point-slope form of the two lines
+        % to find the intersection
+        cMat = [1 -slopeW; 1 -slopeV;]; % Left side of equations
+        rMat = [y1 - slopeW * x1; ballState(2) - slopeV * ballState(1)]; % Right side
+        sol = cMat\rMat;
+        xCol = sol(2);
+        yCol = sol(1);
+        % Round to account for computational errors
+        xCol = round(1000*xCol)/1000;
+        yCol = round(1000*yCol)/1000;
     end
-    slopeV = BS(4)/BS(3);
-    if abs(slopeV) == Inf % If velocity is vertical, make it really steep
-        slopeV = 10000000;
+   
+    function [xVel, yVel] = bounceVel()
+        % The angle out (respect to horizontal) is:
+        angleOut = 2 * angleW - angleV;
+        % Magnitude of the velOut will be same as velIn
+        % Using sin and cos with the angle
+        % Include the coefficient of restitution
+        hypot = sqrt(vx^2 + vy^2);
+        
+        contDis = sqrt((xCol - x1)^2 + (yCol - y1)^2);
+        
+        corEf = cor1 + (cor2 - cor1) * contDis/hypot;
+        xVel = cosd(angleOut)*hypot * corEf;
+        yVel = sind(angleOut)*hypot * corEf;
     end
-    % Take the two slopes and use point-slope form of the two lines
-    % to find the intersection
-    cMat = [1 -slopeW; 1 -slopeV;]; % Left side of equations
-    rMat = [Y1 - slopeW * X1; BS(2) - slopeV * BS(1)]; % Right side
-    sol = cMat\rMat;
-    xCol = sol(2);
-    yCol = sol(1);
-    % Round to account for computational errors
-    xCol = round(1000*xCol)/1000;
-    yCol = round(1000*yCol)/1000;
-end
 
-function [xVel, yVel] = bounceVel(angleW, angleV, vx, vy, cor)
-    % The angle out (respect to horizontal) is:
-    angleOut = 2 * angleW - angleV;
-    % Magnitude of the velOut will be same as velIn
-    % Using sin and cos with the angle
-    % Include the coefficient of restitution
-    hypot = sqrt(vx^2 + vy^2);
-    xVel = cosd(angleOut)*hypot * cor;
-    yVel = sind(angleOut)*hypot * cor;
 end
