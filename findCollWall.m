@@ -2,7 +2,6 @@ function [t, collisionState] = ...
     findCollision(ballState, wall)
 
     cor1 = wall(5);
-    cor2 = wall(6);
     x = ballState(1);
     y = ballState(2);
     vx = ballState(3);
@@ -65,11 +64,8 @@ function [t, collisionState] = ...
         % Magnitude of the velOut will be same as velIn
         % Using sin and cos with the angle
         % Include the coefficient of restitution
-        hypot = sqrt(vx^2 + vy^2);
-        
-        contDis = sqrt((xCol - x1)^2 + (yCol - y1)^2);
-        
-        corEf = cor1 + (cor2 - cor1) * contDis/hypot;
+        hypot = sqrt(vx^2 + vy^2);        
+        corEf = cor1;
         xVel = cosd(angleOut)*hypot * corEf;
         yVel = sind(angleOut)*hypot * corEf;
     end

@@ -11,11 +11,17 @@ newBallState = [(ballState(1)+ballState(3)*dt),...
 % current ball state and each of the walls.
 ctr = 0;
 
-for wall = walls'
+for wall = walls(1:(end-2),:)'
     ctr = ctr+1;
     % Determine when the ball will hit the wall - if at all.
     [t(ctr), collision_state{ctr}] = ...
-        findCollision(ballState, wall);
+        findCollWall(ballState, wall);
+end
+for wall = walls((end-1):end,:)'
+    ctr = ctr+1;
+    % Determine when the ball will hit the wall - if at all.
+    [t(ctr), collision_state{ctr}] = ...
+        findCollFlip(ballState, wall);
 end
 t(t<0) = Inf;
 % Find the minimum collision time via sorting.
