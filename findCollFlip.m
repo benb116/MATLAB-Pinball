@@ -42,14 +42,14 @@ function [t, collisionState] = ...
         if abs(slopeW) == Inf % If wall is vertical, make it really steep
             slopeW = 10000000;
         end
-        slopeV = ballState(4)/ballState(3);
+        slopeV = vy/vx;
         if abs(slopeV) == Inf % If velocity is vertical, make it really steep
             slopeV = 10000000;
         end
         % Take the two slopes and use point-slope form of the two lines
         % to find the intersection
         cMat = [1 -slopeW; 1 -slopeV;]; % Left side of equations
-        rMat = [y1 - slopeW * x1; ballState(2) - slopeV * ballState(1)]; % Right side
+        rMat = [y1 - slopeW * x1; y - slopeV * x]; % Right side
         sol = cMat\rMat;
         xCol = sol(2);
         yCol = sol(1);

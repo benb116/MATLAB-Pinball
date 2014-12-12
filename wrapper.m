@@ -1,24 +1,24 @@
 function wrapper()
 % Make figure
 close all
-warning('off','MATLAB:singularMatrix')
 f = figure;
+
 % Initial conditions
 g = -9.8/4;
 dt = 0.05;
-currentBS = [4 2.5];
-currentBS(3) = 0;
-currentBS(4) = -2;
+currentBS = [4 3.5];
+currentBS(3) = 4;
+currentBS(4) = 8;
 
 % Define Walls
 Walls = [...
-%         0 0 0 10 1; ... % Left
-%         0 10 10 10 1; ... % Top
-%         10 0 10 10 1; ... % Right
-%         0 5 3 1 .9; ...
-%         10 5 7 1 .9; ... 
-%         0 7 3 10 1; ...
-        7 10 10 7 1;]; % Diag
+        0 5 0 7 1; ... % Left
+        3 10 7 10 1; ... % Top
+        10 5 10 7 1; ... % Right
+        0 5 3 1 .9; ... % Bottom left
+        10 5 7 1 .9; ... % Bottom right
+        0 7 3 10 1; ... Top left
+        7 10 10 7 1;]; % Top right
 % Plot Walls
 hold on
 for i = 1:length(Walls(:,1))
@@ -27,7 +27,6 @@ for i = 1:length(Walls(:,1))
     yWall = [thewall(2), thewall(4)];
     wallfig = line(xWall, yWall);
 end
-
 axis([0 10 -1 10])
 axis square
 axis off
@@ -44,6 +43,7 @@ yFlip = [FlipRight(4), FlipRight(2)];
 rightFlipFig = line(xFlip, yFlip);
 
 % Predetermine values for the endpoints when the flipper rotates
+
 % Get flipper length
 flipRad = hypot((FlipLeft(3)-FlipLeft(1)),(FlipLeft(4)-FlipLeft(2)));
 % Get angles when it's down and when it's up
@@ -52,15 +52,15 @@ thetaUp = -thetaDown;
 thetaRange = linspace(thetaDown, thetaUp, 5);
 % Get endpoint values based on the range, length, and offset from origin
 xRotL = flipRad .* cos(thetaRange) + FlipLeft(1);
-xRotR = -flipRad .* cos(thetaRange) + FlipRight(1);
+xRotR = FlipRight(1) - flipRad .* cos(thetaRange);
 yRot = flipRad .* sin(thetaRange) + FlipLeft(2);
-
+% Get max linear velocity of flipper endpoint
 vRotL = diff(xRotL);
 vRoty = diff(yRot);
-newV = hypot(vRotL, vRoty) / dt;
+newV = hypot(vRotL, vRoty) / dt; % Vector addition
 maxV = newV(1);
 
-% Initial plot
+% Initial ball plot
 X = currentBS(1);
 Y = currentBS(2);
 ballScat = scatter(X,Y);
@@ -74,10 +74,12 @@ rightPos = 0;
 
 while currentBS(2) > -0.1 % While the ball is above y = 0 (the bottom)
     % not >= 0 because of small inaccuracies
-    if abs(FlipLeft(4) - leftPos) > 1e-5
-        lfCount = lfCount + 1*sign(leftPos - FlipLeft(4));
+    
+    if abs(FlipLeft(4) - leftPos) > 1e-5 % If the flipper is not where it's 
+    % supposed to be ... 
+        lfCount = lfCount + 1*sign(leftPos - FlipLeft(4)); % Increment the stepper
         if (lfCount > 0) && (lfCount <= length(xRotL))
-            FlipLeft = [3 1 xRotL(lfCount) yRot(lfCount) maxV];
+            FlipLeft = [3 1 xRotL(lfCount) yRot(lfCount) maxV]; % Change the pos
         end
     else
         FlipLeft(5) = 0;
@@ -96,10 +98,11 @@ while currentBS(2) > -0.1 % While the ball is above y = 0 (the bottom)
     set(leftFlipFig, 'XData', [FlipLeft(1), FlipLeft(3)], 'YData', [FlipLeft(2), FlipLeft(4)]);
     set(rightFlipFig, 'XData', [FlipRight(1), FlipRight(3)], 'YData', [FlipRight(2), FlipRight(4)]);
 
-    AllWalls = [Walls; FlipLeft; FlipRight;];
+    Flippers = [FlipLeft; FlipRight];
+    
     % Apply gravity
     currentBS(4) = currentBS(4) + g * dt;
-    currentBS = updateBallState(currentBS, dt, AllWalls);
+    currentBS = updateBallState(currentBS, dt, Walls, Flippers);
     set(ballScat, 'XData', currentBS(1), 'YData',currentBS(2))
 
     drawnow
