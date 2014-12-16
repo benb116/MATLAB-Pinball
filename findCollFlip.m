@@ -67,6 +67,7 @@ function [t, collisionState] = ...
         velmag = sqrt(vx^2 + vy^2);
         flipRad = hypot((x2 - x1),(y2 - y1));
         contDis = sqrt((xCol - x1)^2 + (yCol - y1)^2);
+        % addVel is dependent on how far along the flipper the ball hits
         addVel = maxV * (contDis / flipRad);
 
         xVel = cosd(angleOut)*(velmag + addVel);

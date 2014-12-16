@@ -1,38 +1,58 @@
-function wrapper()
-% Make figure
+function wrapper(varargin)
 close all
 warning('off','MATLAB:singularMatrix')
+% Make figure
 f = figure;
+axis([0 10 -1 10])
+axis square
+axis off
 hold on
 
 % Initial conditions
 g = -9.8/6;
 dt = 0.05;
-FlipInc = 5;
-currentBS = [9.75 0.25];
-currentBS(3) = -rand/10;
-currentBS(4) = 0;
-plunger = 0;
-plungeRel = 0;
-Points = 0;
+FlipInc = 7; % Number of increments the flippers move to
+currentBS = [9.75 0.25]; % X and Y
+currentBS(3) = -.1; % X vel
+currentBS(4) = 0; % Y vel
+plunger = 0; % Plunger depth
+plungeRel = 0; % Has plunger been released yet?
+if length(varargin) == 1
+    Points = varargin(1);
+    Points = Points{1};
+else
+    Points = 0;
+end
 
-t = title(num2str(Points));
+if ~exist('highscores.mat', 'file') % If there's no highscore file
+    highScore = 0;
+    highName = 'None';
+    save('highscores', 'highScore', 'highName')
+end
+load('highscores', 'highScore', 'highName')
+
+% Display the high score in the top left corner
+highText = ['High Score: ',num2str(highScore), ' - ', highName];
+hst = text(-3,10,highText);
+hst.FontSize = 14;
+% Display points
+t = title(['Points: ', num2str(Points)]);
+
 % Define Walls
 Walls = [...
-        0 4.5 0 7 .9; ... % Left
-        3 10 7 10 .9; ... % Top
+      % X1 Y1 X2 Y2 CoR
+        0 4.5 0 6 .9; ... % Left
+        2 10 7 10 .9; ... % Top
         10 0 10 7 .9; ... % Right out
         9.5 0 9.5 4.75 1; ... % Right in
         0.5 4.75 3 1 .9; ... % Bottom left upper
-        0 4.5 3 0 .9; ... % Bottom left lower
+        0 4.5 3 0 .6; ... % Bottom left lower
         9.5 4.75 7 1 .9; ... % Bottom right
-        0 7 3 10 .9; ... Top left
-        7 10 10 7 .9;]; % Top right
-Circles = [...
-        4 6 .5 1.1; ... % origin x, origin y, radius
-        6 6 .5 1.1; ...
-        5 8 .5 1.1;
-    ];
+        0 6 2 10 .9; ... Top left
+        7 10 10 7 .9; ... % Top right
+%         9.5 6.5 10 6 .9; ...
+%         9.5 6.5 10 7 .9; ...
+        ];
 % Plot Walls
 for i = 1:length(Walls(:,1))
     thewall = Walls(i,:);
@@ -41,6 +61,14 @@ for i = 1:length(Walls(:,1))
     wallfig = line(xWall, yWall);
 end
 
+% Define Circles
+Circles = [...
+      % origin x, origin y, radius, CoR
+        4 6 .5 1.1; ...
+        6 6 .5 1.1; ...
+        5 8 .5 1.1;
+        ];
+% Plot the Circles
 ang=0:0.01:2*pi;
 for i = 1:length(Circles(:,1))
     thecirc = Circles(i,:);
@@ -49,25 +77,21 @@ for i = 1:length(Circles(:,1))
     wallfig = plot(xCirc,yCirc);
 end
 
-axis([0 10 -1 10])
-axis square
-axis off
-
-% Define Flippers
+% Define Flippers (same format as walls)
 FlipLeft = [3 1 4.5 0 .9;]; % Left
 FlipRight = [7 1 5.5 0 .9;]; % Right
 % Plot FLippers
-xFlip = [FlipLeft(1), FlipLeft(3)];
-yFlip = [FlipLeft(2), FlipLeft(4)];
-leftFlipFig = line(xFlip, yFlip);
-xFlip = [FlipRight(3), FlipRight(1)];
-yFlip = [FlipRight(4), FlipRight(2)];
-rightFlipFig = line(xFlip, yFlip);
+xFlipL = [FlipLeft(1), FlipLeft(3)];
+yFlipL = [FlipLeft(2), FlipLeft(4)];
+leftFlipFig = line(xFlipL, yFlipL);
+xFlipR = [FlipRight(3), FlipRight(1)];
+yFlipR = [FlipRight(4), FlipRight(2)];
+rightFlipFig = line(xFlipR, yFlipR);
 
 % Predetermine values for the endpoints when the flipper rotates
-% Get flipper length
+% Get flipper length (using hypot of dX and dY)
 flipRad = hypot((FlipLeft(3)-FlipLeft(1)),(FlipLeft(4)-FlipLeft(2)));
-% Get angles when it's down and when it's up
+% Get angles when it's down and when it's up (arctan of slope)
 thetaDown = atan((FlipLeft(4)-FlipLeft(2))/(FlipLeft(3)-FlipLeft(1)));
 thetaUp = -thetaDown;
 thetaRange = linspace(thetaDown, thetaUp, FlipInc);
@@ -75,10 +99,10 @@ thetaRange = linspace(thetaDown, thetaUp, FlipInc);
 xRotL = flipRad .* cos(thetaRange) + FlipLeft(1);
 xRotR = -flipRad .* cos(thetaRange) + FlipRight(1);
 yRot = flipRad .* sin(thetaRange) + FlipLeft(2);
-
+% Get flipper speed
 vRotL = diff(xRotL);
 vRoty = diff(yRot);
-newV = hypot(vRotL, vRoty) / dt;
+newV = hypot(vRotL, vRoty) / dt; % vector add vx and vy
 maxV = newV(1);
 
 % Initial plot
@@ -86,38 +110,53 @@ X = currentBS(1);
 Y = currentBS(2);
 ballScat = scatter(X,Y);
 thefig = gcf;
+% Define key press functions
 set(thefig, 'KeyPressFcn', @KeyPress, 'KeyReleaseFcn', @KeyRelease);
+% Instructions
 bottext = text(5,-1,'Hold and release the spacebar to plunge',...
     'HorizontalAlignment', 'center');
 bottext.FontSize = 15;
 
+% Plot plunger
 plunge = rectangle('Position',[9.6,-1,.3,1]);
-while ~plungeRel
+while ~plungeRel % While the plunger has not been released
     pause(.5)
-    currentBS(4) = currentBS(4) + min([plunger,20]) / 5;
+    currentBS(4) = currentBS(4) + min([plunger,20]) / 5; % Set new initial Vy
     plungeHeight = 1 - (min([plunger,20]) / 21);
-    set(plunge, 'Position', [9.6,-1,.3,plungeHeight]);
+    set(plunge, 'Position', [9.6,-1,.3,plungeHeight]); % Change the plunger look
     drawnow
 end
+% Reset plunger image and change instructions
 set(plunge, 'Position', [9.6,-1,.3,.95]);
-set(bottext, 'string', 'Use the ''a'' and ''l'' keys to activate the flippers')
+set(bottext, 'string', 'Use the ''A'' and ''L'' keys to activate the flippers')
+drawnow
 
-lfCount = 0;
+lfCount = 0; % The index of the specific endpoint in the array of flipper endpts
 rfCount = 0;
-leftPos = 0;
+leftPos = 0; % Where should the flipper be (0 = down, 2 = up)
 rightPos = 0;
 
+% MAIN WHILE LOOP --------------------
 while currentBS(2) > -0.1 % While the ball is above y = 0 (the bottom)
     % not >= 0 because of small inaccuracies
-    if abs(FlipLeft(4) - leftPos) > 1e-5
-        lfCount = lfCount + 1*sign(leftPos - FlipLeft(4));
+    Flippers = [FlipLeft; FlipRight];
+
+    % Apply gravity
+    currentBS(4) = currentBS(4) + g * dt;
+    % Update ballstate
+    [currentBS, Points] = updateBallState(currentBS, dt/2, Walls, Circles, Flippers, Points);
+     
+    if abs(FlipLeft(4) - leftPos) > 1e-5 % If the flipper is not where it's supposed to be
+        lfCount = lfCount + 1*sign(leftPos - FlipLeft(4)); % Increment the index (up or down)
         if (lfCount > 0) && (lfCount <= length(xRotL))
-            FlipLeft = [3 1 xRotL(lfCount) yRot(lfCount) maxV*sign(leftPos - FlipLeft(4))];
+            % Change the flipper endpt
+            % Also set the max addVel to the maxV
+            FlipLeft = [3 1 xRotL(lfCount) yRot(lfCount) maxV*sign(leftPos - FlipLeft(4))]; 
         end
     else
-        FlipLeft(5) = 0;
+        FlipLeft(5) = 0; % Reset addVel
     end
-    
+    % Same as the left
     if abs(FlipRight(4) - rightPos) > 1e-5
         rfCount = rfCount + 1*sign(rightPos - FlipRight(4));
         if (rfCount > 0) && (rfCount <= length(xRotL))
@@ -128,27 +167,40 @@ while currentBS(2) > -0.1 % While the ball is above y = 0 (the bottom)
     end
     
     % Update Plots
-    set(leftFlipFig, 'XData', [FlipLeft(1), FlipLeft(3)], 'YData', [FlipLeft(2), FlipLeft(4)]);
-    set(rightFlipFig, 'XData', [FlipRight(1), FlipRight(3)], 'YData', [FlipRight(2), FlipRight(4)]);
-
+    try
+        set(leftFlipFig, 'XData', [FlipLeft(1), FlipLeft(3)], 'YData', [FlipLeft(2), FlipLeft(4)]);
+        set(rightFlipFig, 'XData', [FlipRight(1), FlipRight(3)], 'YData', [FlipRight(2), FlipRight(4)]);
+    end
     Flippers = [FlipLeft; FlipRight];
-    
-    % Apply gravity
-    currentBS(4) = currentBS(4) + g * dt;
-    [currentBS, Points] = updateBallState(currentBS, dt, Walls, Circles, Flippers, Points);
+
+    [currentBS, Points] = updateBallState(currentBS, dt/2, Walls, Circles, Flippers, Points);
+
+    % Update graph
     set(ballScat, 'XData', currentBS(1), 'YData',currentBS(2))
-    t = title(num2str(Points));
+    t = title(['Points: ', num2str(Points)]);
 
     drawnow
 end
-% if (currentBS(1) > 9.5) && (currentBS(1) < 10) 
-%     currentBS
-%     plungeRel = 0;
-%     currentBS(1) = 9.75;
-%     currentBS(2) = 0.25;
-% else
-    set(bottext, 'string', 'Press ''r'' to restart or ''q'' to quit')
-% end
+if abs(currentBS(1) - 9.75) <= .5
+    wrapper(Points)
+else
+    % When the game ends
+    if Points > highScore % If new high score
+        highScore = Points;
+        % Get name
+        highNameCell = inputdlg('Please enter your name', 'New high score!');
+        highName = highNameCell{1};
+        % Update file and plot
+        save('highscores', 'highScore', 'highName')
+        highText = ['High Score: ',num2str(highScore), ' - ', highName];
+        set(hst, 'string', highText);
+        drawnow
+    end
+    % New instructions
+    try
+        set(bottext, 'string', 'Gee Dangit. Press ''R'' to restart or ''Q'' to quit')
+    end
+end
 
     function KeyPress(~,eventdata)
         % Utilizes keypresses to move the x/y coordinates of the ball or
@@ -164,7 +216,7 @@ end
             case 'r'
                 wrapper()
             case ' '
-                plunger = plunger + .5;
+                plunger = plunger + .5; % Add plunger depth
         end
         
     end
@@ -176,7 +228,7 @@ end
             case 'l'
                 rightPos = 0;
             case ' '
-                plungeRel = 1;
+                plungeRel = 1; % RELEASE THE KRAKEN!!!!
         end
     end
 end

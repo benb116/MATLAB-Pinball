@@ -26,8 +26,8 @@ function [t, collisionState] = ...
     xCol = xCol(ind(1));
     yCol = yCol(ind(1));
     t = t(1);
-    slopeR = (yCol - q)/(xCol - p); % Slope rad
-    slopeW = -1 / slopeR;
+    slopeR = (yCol - q)/(xCol - p); % Slope of the radius
+    slopeW = -1 / slopeR; % opposite reciprocal
     angleW = atand(slopeW); % Wall angle (respect to horizontal)
     angleV = atand(vy/vx); % Velocity angle (respect to horizontal)
     % If vx is negative, then angleV will be anti-parallel to the
@@ -39,18 +39,13 @@ function [t, collisionState] = ...
 
     
     function [xCol, yCol] = colPoint()
-        m = vy/vx;
+        m = vy/vx; % Slope
         if abs(m) == Inf % If velocity is vertical, make it really steep
             m = 10000000;
         end
-        b = y - m * x;
-%         qCoef = [(m^2+1) 2*(m*b-m*q-p) (q^2-r^2+p^2-2*b*q+b^2)];
-%         xCol = roots(qCoef)
-%         yCol = m.*xCol + b
+        b = y - m * x; % Y int
 
-        [xCol,yCol] = linecirc(m,b,p,q,r);
-%         xCol(isnan(xCol)) = [];
-%         yCol(isnan(yCol)) = [];
+        [xCol,yCol] = linecirc(m,b,p,q,r); % Thank god for built-in functions
 
     end
    

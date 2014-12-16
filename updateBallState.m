@@ -20,14 +20,14 @@ end
 
 for circle = circles'
     ctr = ctr+1;
-    % Determine when the ball will hit the wall - if at all.
+    % Determine when the ball will hit the circle - if at all.
     [t(ctr), collision_state{ctr}] = ...
         findCollCirc(ballState, circle);
 end
 
 for flipper = flippers'
     ctr = ctr+1;
-    % Determine when the ball will hit the wall - if at all.
+    % Determine when the ball will hit the flipper - if at all.
     [t(ctr), collision_state{ctr}] = ...
         findCollFlip(ballState, flipper);
 end
@@ -36,19 +36,19 @@ t(t<0) = Inf;
 % Find the minimum collision time via sorting.
 [t,ind] = sort(t);
 collision_state = collision_state(ind);
-% If the minimum collision time is less than the simulation time
-% (+eps to account for numerical inaccuracies), account for the
-% collision.
-% disp(t(1))
+% Throw out any small errors
 while t(1) < .0001
     t(1) = [];
     collision_state = collision_state(2:end);
 end
+% If the minimum collision time is less than the simulation time
+% (+eps to account for numerical inaccuracies), account for the
+% collision.
 if (t(1) <= dt+eps)
 %     colWall = walls(ind(1),:);
     newBallState = collision_state{1};
     ttc = t(1);
-    
+    % If the collision is with a circle, add a point
     if abs(ind(1) - (length(walls)+2)) <= 1
         points = points + 1;
     end
