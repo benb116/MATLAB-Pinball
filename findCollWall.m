@@ -64,10 +64,10 @@ function [t, collisionState] = ...
         % Magnitude of the velOut will be same as velIn
         % Using sin and cos with the angle
         % Include the coefficient of restitution
-        hypot = sqrt(vx^2 + vy^2);        
+        hyp = hypot(vx,vy);
         corEf = cor1;
-        xVel = cosd(angleOut)*hypot * corEf;
-        yVel = sind(angleOut)*hypot * corEf;
+        xVel = cosd(angleOut)*hyp * corEf;
+        yVel = sind(angleOut)*hyp * corEf;
     end
 
 end

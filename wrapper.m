@@ -1,6 +1,6 @@
 function wrapper(varargin)
-close all
 warning('off','MATLAB:singularMatrix')
+close all
 % Make figure
 f = figure;
 axis([0 10 -1 10])
@@ -9,7 +9,7 @@ axis off
 hold on
 
 % Initial conditions
-g = -9.8/6;
+g = -9.8/4;
 dt = 0.05;
 FlipInc = 7; % Number of increments the flippers move to
 currentBS = [9.75 0.25]; % X and Y
@@ -121,9 +121,11 @@ bottext.FontSize = 15;
 plunge = rectangle('Position',[9.6,-1,.3,1]);
 while ~plungeRel % While the plunger has not been released
     pause(.5)
-    currentBS(4) = currentBS(4) + min([plunger,20]) / 5; % Set new initial Vy
-    plungeHeight = 1 - (min([plunger,20]) / 21);
-    set(plunge, 'Position', [9.6,-1,.3,plungeHeight]); % Change the plunger look
+    currentBS(4) = currentBS(4) + min([plunger,15]) / 3; % Set new initial Vy
+    plungeHeight = 1 - (min([plunger,15]) / 16);
+    try
+        set(plunge, 'Position', [9.6,-1,.3,plungeHeight]); % Change the plunger look
+    end
     drawnow
 end
 % Reset plunger image and change instructions
@@ -136,16 +138,26 @@ rfCount = 0;
 leftPos = 0; % Where should the flipper be (0 = down, 2 = up)
 rightPos = 0;
 
+currentBS = [5 4]; % X and Y
+currentBS(3) = 1; % X vel
+currentBS(4) = -.2; % Y vel
+
 % MAIN WHILE LOOP --------------------
 while currentBS(2) > -0.1 % While the ball is above y = 0 (the bottom)
     % not >= 0 because of small inaccuracies
-    Flippers = [FlipLeft; FlipRight];
 
+    Flippers = [FlipLeft; FlipRight];
     % Apply gravity
     currentBS(4) = currentBS(4) + g * dt;
     % Update ballstate
-    [currentBS, Points] = updateBallState(currentBS, dt/2, Walls, Circles, Flippers, Points);
-     
+    [possibleBS1, Points1] = updateBallState(currentBS, dt, Walls, Circles, Flippers, Points);
+    
+    if (possibleBS1(3) == currentBS(3)) && (possibleBS1(4) == currentBS(4))
+        useBS = 2;
+    else
+        useBS = 1;
+    end
+    
     if abs(FlipLeft(4) - leftPos) > 1e-5 % If the flipper is not where it's supposed to be
         lfCount = lfCount + 1*sign(leftPos - FlipLeft(4)); % Increment the index (up or down)
         if (lfCount > 0) && (lfCount <= length(xRotL))
@@ -159,13 +171,12 @@ while currentBS(2) > -0.1 % While the ball is above y = 0 (the bottom)
     % Same as the left
     if abs(FlipRight(4) - rightPos) > 1e-5
         rfCount = rfCount + 1*sign(rightPos - FlipRight(4));
-        if (rfCount > 0) && (rfCount <= length(xRotL))
+        if (rfCount > 0) && (rfCount <= length(xRotR))
             FlipRight = [7 1 xRotR(rfCount) yRot(rfCount) maxV*sign(rightPos - FlipRight(4))];
         end
     else
         FlipRight(5) = 0;
     end
-    
     % Update Plots
     try
         set(leftFlipFig, 'XData', [FlipLeft(1), FlipLeft(3)], 'YData', [FlipLeft(2), FlipLeft(4)]);
@@ -173,13 +184,23 @@ while currentBS(2) > -0.1 % While the ball is above y = 0 (the bottom)
     end
     Flippers = [FlipLeft; FlipRight];
 
-    [currentBS, Points] = updateBallState(currentBS, dt/2, Walls, Circles, Flippers, Points);
+    [possibleBS2, Points2] = updateBallState(currentBS, dt, Walls, Circles, Flippers, Points);
 
+    if useBS == 2;
+        currentBS = possibleBS2;
+        Points = Points2;
+    else
+        currentBS = possibleBS1;
+        Points = Points1;
+    end
     % Update graph
-    set(ballScat, 'XData', currentBS(1), 'YData',currentBS(2))
+    try
+        set(ballScat, 'XData', currentBS(1), 'YData',currentBS(2))
+    end
     t = title(['Points: ', num2str(Points)]);
-
+    
     drawnow
+%     pause(.5)
 end
 if abs(currentBS(1) - 9.75) <= .5
     wrapper(Points)
