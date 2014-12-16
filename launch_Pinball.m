@@ -1,4 +1,4 @@
-function wrapper(varargin)
+function launch_Pinball(varargin)
 warning('off','MATLAB:singularMatrix')
 close all
 % Make figure
@@ -11,12 +11,13 @@ hold on
 % Initial conditions
 g = -9.8/4;
 dt = 0.05;
-FlipInc = 7; % Number of increments the flippers move to
+FlipInc = 5; % Number of increments the flippers move to
 currentBS = [9.75 0.25]; % X and Y
 currentBS(3) = -.1; % X vel
 currentBS(4) = 0; % Y vel
 plunger = 0; % Plunger depth
 plungeRel = 0; % Has plunger been released yet?
+% If we are resetting with some points
 if length(varargin) == 1
     Points = varargin(1);
     Points = Points{1};
@@ -27,7 +28,7 @@ end
 if ~exist('highscores.mat', 'file') % If there's no highscore file
     highScore = 0;
     highName = 'None';
-    save('highscores', 'highScore', 'highName')
+    save('highscores', 'highScore', 'highName') % Make a new one
 end
 load('highscores', 'highScore', 'highName')
 
@@ -42,14 +43,14 @@ t = title(['Points: ', num2str(Points)]);
 Walls = [...
       % X1 Y1 X2 Y2 CoR
         0 4.5 0 6 .9; ... % Left
-        2 10 7 10 .9; ... % Top
+        2 10 7 10 .6; ... % Top
         10 0 10 7 .9; ... % Right out
         9.5 0 9.5 4.75 1; ... % Right in
         0.5 4.75 3 1 .9; ... % Bottom left upper
         0 4.5 3 0 .6; ... % Bottom left lower
         9.5 4.75 7 1 .9; ... % Bottom right
-        0 6 2 10 .9; ... Top left
-        7 10 10 7 .9; ... % Top right
+        0 6 2 10 .7; ... Top left
+        7 10 10 7 .7; ... % Top right
 %         9.5 6.5 10 6 .9; ...
 %         9.5 6.5 10 7 .9; ...
         ];
@@ -66,7 +67,8 @@ Circles = [...
       % origin x, origin y, radius, CoR
         4 6 .5 1.1; ...
         6 6 .5 1.1; ...
-        5 8 .5 1.1;
+        5 8 .5 1.1; ...
+%         5 4 .5 1.1; ...
         ];
 % Plot the Circles
 ang=0:0.01:2*pi;
@@ -138,25 +140,14 @@ rfCount = 0;
 leftPos = 0; % Where should the flipper be (0 = down, 2 = up)
 rightPos = 0;
 
-currentBS = [5 4]; % X and Y
-currentBS(3) = 1; % X vel
-currentBS(4) = -.2; % Y vel
-
 % MAIN WHILE LOOP --------------------
 while currentBS(2) > -0.1 % While the ball is above y = 0 (the bottom)
     % not >= 0 because of small inaccuracies
-
     Flippers = [FlipLeft; FlipRight];
     % Apply gravity
     currentBS(4) = currentBS(4) + g * dt;
-    % Update ballstate
+    % Check ballstate before moving the flipper
     [possibleBS1, Points1] = updateBallState(currentBS, dt, Walls, Circles, Flippers, Points);
-    
-    if (possibleBS1(3) == currentBS(3)) && (possibleBS1(4) == currentBS(4))
-        useBS = 2;
-    else
-        useBS = 1;
-    end
     
     if abs(FlipLeft(4) - leftPos) > 1e-5 % If the flipper is not where it's supposed to be
         lfCount = lfCount + 1*sign(leftPos - FlipLeft(4)); % Increment the index (up or down)
@@ -182,28 +173,32 @@ while currentBS(2) > -0.1 % While the ball is above y = 0 (the bottom)
         set(leftFlipFig, 'XData', [FlipLeft(1), FlipLeft(3)], 'YData', [FlipLeft(2), FlipLeft(4)]);
         set(rightFlipFig, 'XData', [FlipRight(1), FlipRight(3)], 'YData', [FlipRight(2), FlipRight(4)]);
     end
+    drawnow
     Flippers = [FlipLeft; FlipRight];
-
+    % Check ballstate after moving flipper
     [possibleBS2, Points2] = updateBallState(currentBS, dt, Walls, Circles, Flippers, Points);
 
-    if useBS == 2;
+    % If the velocities before == velocities after (for pBS1), the ball did 
+    % not contact the wall. Use pBS2. 
+    if (possibleBS1(3) == currentBS(3)) && (possibleBS1(4) == currentBS(4)) ...
+            && (sign(currentBS(4)) ~= sign(rightPos - FlipRight(4)))
         currentBS = possibleBS2;
         Points = Points2;
     else
         currentBS = possibleBS1;
         Points = Points1;
     end
+    
     % Update graph
     try
         set(ballScat, 'XData', currentBS(1), 'YData',currentBS(2))
     end
     t = title(['Points: ', num2str(Points)]);
-    
     drawnow
-%     pause(.5)
 end
+% If the ball ended in the plunger, reset with the number of points
 if abs(currentBS(1) - 9.75) <= .5
-    wrapper(Points)
+    launch_Pinball(Points)
 else
     % When the game ends
     if Points > highScore % If new high score
@@ -235,7 +230,7 @@ end
             case 'l'
                 rightPos = 2;
             case 'r'
-                wrapper()
+                launch_Pinball() % recurse
             case ' '
                 plunger = plunger + .5; % Add plunger depth
         end

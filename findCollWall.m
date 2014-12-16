@@ -10,10 +10,10 @@ function [t, collisionState] = ...
     y1 = wall(2);
     x2 = wall(3);
     y2 = wall(4);
-    % Initialize the outputs - assume ball will not collide with the wall.
+
     t = Inf;
     collisionState = [NaN NaN NaN NaN];
-    % Get the position of the ball at collision
+    % Get collision point
     [xCol, yCol] = colPoint();
     % If the coordinates fall in the range of the wall coordinates
     if ((yCol >= min(y1,y2)) && (yCol <= max(y1,y2))...
