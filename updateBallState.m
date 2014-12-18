@@ -1,6 +1,7 @@
 function [newBallState, points] = updateBallState(ballState, ...
     dt, walls, circles, flippers, points)
-
+% Checks each boundary for collisions, reports back the expected ballstate
+% after dt
 ttc = dt;
 % Assume, initially, that the ball does not collide with the
 % wall.
@@ -41,7 +42,7 @@ while t(1) <= 0.0001
     t(1) = [];
     collision_state = collision_state(2:end);
 end
-
+% t(1)
 if (t(1) <= dt+eps)
     newBallState = collision_state{1};
     ttc = t(1);
@@ -49,7 +50,7 @@ if (t(1) <= dt+eps)
     if (ind(1) > length(walls)) && (ind(1) <= length(walls)+length(circles))
         points = points + 1;
     end
-
+    
     % Accounts for corner cases
     if abs(t(1)-t(2)) < .0001
         if sign(ballState(3)) ~= sign(collision_state{1}(3))
@@ -67,5 +68,5 @@ end
 % If there's time left over, go again
 if (dt - ttc > eps)
     [newBallState, points] = updateBallState(newBallState, ...
-    dt-ttc, walls, circles, flippers, points);
+        dt-ttc, walls, circles, flippers, points);
 end
