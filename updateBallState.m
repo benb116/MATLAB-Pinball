@@ -1,6 +1,7 @@
-function newBallState = updateBallState(ballState, ...
-    dt, walls)
-
+function [newBallState, points] = updateBallState(ballState, ...
+    dt, walls, circles, flippers, points)
+% Checks each boundary for collisions, reports back the expected ballstate
+% after dt
 ttc = dt;
 % Assume, initially, that the ball does not collide with the
 % wall.
@@ -13,31 +14,45 @@ ctr = 0;
 
 for wall = walls'
     ctr = ctr+1;
-    % Determine when the ball will hit the wall - if at all.
+    % Determine when the ball will hit the wall
     [t(ctr), collision_state{ctr}] = ...
-        findCollision(ballState, wall);
+        findCollWall(ballState, wall);
 end
+
+for circle = circles'
+    ctr = ctr+1;
+    % Determine when the ball will hit the circle
+    [t(ctr), collision_state{ctr}] = ...
+        findCollCirc(ballState, circle);
+end
+
+for flipper = flippers'
+    ctr = ctr+1;
+    % Determine when the ball will hit the flipper
+    [t(ctr), collision_state{ctr}] = ...
+        findCollFlip(ballState, flipper);
+end
+
 t(t<0) = Inf;
-% Find the minimum collision time via sorting.
+% Sort collision times
 [t,ind] = sort(t);
 collision_state = collision_state(ind);
-% If the minimum collision time is less than the simulation time
-% (+eps to account for numerical inaccuracies), account for the
-% collision.
-% disp(t(1))
-while t(1) < .0005
+% Throw out any that are negative
+while t(1) <= 0.0001
     t(1) = [];
     collision_state = collision_state(2:end);
 end
+% t(1)
 if (t(1) <= dt+eps)
-    colWall = walls(ind(1),:);
     newBallState = collision_state{1};
-%     if t(1) < .01
-%         disp(t(1))
-%     end
     ttc = t(1);
+    % If the collision is with a circle, add a point
+    if (ind(1) > length(walls)) && (ind(1) <= length(walls)+length(circles))
+        points = points + 1;
+    end
+    
     % Accounts for corner cases
-    if abs(t(1)-t(2)) < eps
+    if abs(t(1)-t(2)) < .0001
         if sign(ballState(3)) ~= sign(collision_state{1}(3))
             newBallState(3) = collision_state{1}(3);
         else
@@ -50,8 +65,8 @@ if (t(1) <= dt+eps)
         end
     end
 end
-% Resimulate the trajectory of the ball if there is time
-% left after the collision.
+% If there's time left over, go again
 if (dt - ttc > eps)
-    newBallState = updateBallState(newBallState, dt-ttc,walls);
+    [newBallState, points] = updateBallState(newBallState, ...
+        dt-ttc, walls, circles, flippers, points);
 end
